@@ -53,7 +53,7 @@ generate_file :: (file: &FileDescriptorProto) -> CodeGeneratorResponse.File {
     content->append("use protobuf\n\n")
 
     for& msg in file.message_type {
-        output_message_type(&content, msg, "")
+        output_message_type(&content, msg, "", file.syntax ?? "proto2")
     }
 
     for& enum_type in file.enum_type {
@@ -66,7 +66,7 @@ generate_file :: (file: &FileDescriptorProto) -> CodeGeneratorResponse.File {
     }
 }
 
-output_message_type :: (content: &dyn_str, msg: &DescriptorProto, parent_type: str) {
+output_message_type :: (content: &dyn_str, msg: &DescriptorProto, parent_type: str, syntax: str) {
     content->append("@protobuf.Message\n")
 
     if parent_type {
@@ -96,10 +96,22 @@ output_message_type :: (content: &dyn_str, msg: &DescriptorProto, parent_type: s
         content->append(safe_field_name(field.name!))
         content->append(": ")
 
-        label := field.label ?? FieldDescriptorProto.Label.LABEL_REQUIRED
+        label := field.label ?? FieldDescriptorProto.Label.LABEL_OPTIONAL
         switch label {
-            case .LABEL_OPTIONAL do content->append("? ")
-            case .LABEL_REPEATED do content->append("[..] ")
+            case .LABEL_REPEATED {
+                content->append("[..] ")
+            }
+
+            case .LABEL_OPTIONAL {
+                if type == .TYPE_MESSAGE {
+                    content->append("? ")
+                    break
+                }
+
+                if syntax == "proto2" || syntax == "proto1" || (field.proto3_optional ?? false) {
+                    content->append("? ")
+                }
+            }
         }
 
         content->append(switch type {
@@ -140,7 +152,7 @@ output_message_type :: (content: &dyn_str, msg: &DescriptorProto, parent_type: s
     }
 
     for& inner_msg in msg.nested_type {
-        output_message_type(content, inner_msg, next_parent_type)
+        output_message_type(content, inner_msg, next_parent_type, syntax)
     }
 
     for& inner_enum in msg.enum_type {

@@ -48,36 +48,21 @@ parse_message :: (input: [] u8, out: rawptr, type: type_expr) -> Result(bool, Un
         }
 
         field_value := parse_field_value(&data, field_header.encoding_type)?
+        field_desc  := Slice.find_opt(msg_desc.fields, [x](x.proto_field_number == field_header.proto_number)) |> or_continue
 
-        maybe_field_desc := Slice.find_opt(
-            msg_desc.fields
-            [x](x.proto_field_number == field_header.proto_number)
-        )
+        field_pointer := memory.ptr_add(out, field_desc.field_offset)
 
-        if !maybe_field_desc do continue
-
-        field_desc := maybe_field_desc!
-        dest_ptr, dest_type := get_ptr_and_type(out, &field_desc)
-        if dest_ptr == null do continue
-
-        dest_type_info := dest_type->info()
-        if dest_type == str {
-            *cast(& str) dest_ptr = str.copy(field_value.bytes->expect("str should be encoded in len"))
+        if field_desc.is_optional {
+            // Set the tag to be Some
+            *cast(& u8) field_pointer = 1
+            field_pointer = memory.ptr_add(field_pointer, ~~ field_desc.optional_offset)
         }
-        elseif dest_type_info.kind == .Basic {
-            if field_value.bytes {
-                // TODO: Support reading packed encodings
-                continue
-            }
 
-            store_basic_value(dest_ptr, dest_type, field_value.number->expect("primitives should be encoded in number"), field_desc.int_encoding)
+        if field_desc.is_repeated {
+            field_pointer = Array.untyped_alloc_one(~~ field_pointer, type)
         }
-        elseif dest_type_info.kind == .Enum {
-            *cast(& i32) dest_ptr = ~~ field_value.number->expect("enum should be encoded in number")
-        }
-        elseif dest_type_info.kind == .Struct {
-            parse_message(field_value.bytes!, dest_ptr, dest_type)?
-        }
+
+        store_value(field_pointer, &field_desc, field_value)?
     }
 
     return .{ Ok = true }
@@ -87,13 +72,9 @@ parse_field_header :: (data: &[] u8) -> Result(_Field_Header, Unmarshal_Error) {
     if data.length == 0 do return .{ Err = .EOF }
 
     b := parse_varint(data)?
+    header := _Field_Header.{ ~~(b >> 3), ~~(b & 7) }
 
-    return .{
-        Ok = .{
-            ~~(b >> 3)
-            ~~(b & 7)
-        }
-    }
+    return .{ Ok = header }
 }
 
 parse_field_value :: (data: &[] u8, enc: _Encoding_Type) -> Result(_Field_Value, Unmarshal_Error) {
@@ -152,96 +133,43 @@ parse_varint :: (data: &[] u8) -> Result(u64, Unmarshal_Error) {
     return .{ Ok = out }
 }
 
-get_ptr_and_type :: (base: rawptr, field_desc: &Proto_Field_Descriptor) -> (out: rawptr, type: type_expr) {
-    field_type_info := field_desc.field_type->info()
-    switch field_type_info.kind {
-        case .Basic, .Enum {
-            out = memory.ptr_add(base, field_desc.field_offset)
-            type = field_desc.field_type
-        }
+store_value :: (out: rawptr, desc: &Proto_Field_Descriptor, value: _Field_Value) -> Result(bool, Unmarshal_Error) {
+    switch desc.proto_field_type {
+        // Some fun type punning here
+        case .DOUBLE, .INT64, .UINT64, .FIXED64, .SFIXED64 do *cast(& u64) out = value.number!
+        case .FLOAT,  .INT32, .UINT32, .FIXED32, .SFIXED32 do *cast(& u32) out = ~~ value.number!
 
-        case .Union {
-            if field_type_info->as_union().constructed_from == Optional {
-                *cast(& u8) memory.ptr_add(base, field_desc.field_offset) = ~~ Optional(void).tag_enum.Some
-                out  = memory.ptr_add(base, field_desc.field_offset + field_type_info.alignment)
-                type = field_type_info->as_union().variants[1].type
+        case .SINT32 {
+            v := value.number!
+            *cast(& i32) out = do {
+                if v & 1 == 0 do return cast(i32) (v >> 1)
+                
+                return -cast(i32) (v >> 1) - 1
             }
         }
 
-        case .Dynamic_Array {
-            info := field_type_info->as_dynamic_array()
-            type = info.of
+        case .SINT64 {
+            v := value.number!
+            *cast(& i64) out = do {
+                if v & 1 == 0 do return cast(i64) (v >> 1)
+                
+                return -cast(i64) (v >> 1) - 1
+            }
+        }
 
-            arr := cast(&Untyped_Array) memory.ptr_add(base, field_desc.field_offset)
+        case .BOOL do *cast(& bool) out = value.number! != 0
+        case .ENUM do *cast(& u32)  out = ~~ value.number!
 
-            out = Array.untyped_alloc_one(arr, type)
-            if out == null do break
+        case .STRING, .BYTES {
+            *cast(& str) out = str.copy(value.bytes->expect("str should be encoded in len"))
+        }
+
+        case .MESSAGE {
+            parse_message(value.bytes!, out, desc.field_type_)?
         }
     }
 
-    return
-}
-
-store_basic_value :: (out: rawptr, type: type_expr, value: u64, int_encoding: Int_Encoding) {
-    switch type {
-        case bool do *cast(& bool) out = value != 0
-
-        case i32 do *cast(& i32) out = make_i32(value, int_encoding)
-        case i64 do *cast(& i64) out = make_i64(value, int_encoding)
-
-        case u32 do *cast(& u32) out = ~~ value
-        case u64 do *cast(& u64) out = value
-
-        case f32 {
-            tmp := value
-            *cast(& i32) out = *cast(& i32) &tmp
-        }
-
-        case f64 {
-            tmp := value
-            *cast(& i64) out = *cast(& i64) &tmp
-        }
-
-        case _ {
-            panic(tprintf("Unsupported basic type: '{}'", type))
-        }
-    }
-
-    make_i32 :: (value: u64, int_encoding: Int_Encoding) -> i32 {
-        switch int_encoding {
-            case .Twos_Complement, .Fixed {
-                return cast(u32) value
-            }
-
-            case .Zig_Zag {
-                if value & 1 == 0 {
-                    return cast(i32) (value >> 1)
-                } else {
-                    return -cast(i32) (value >> 1) - 1
-                }
-            }
-        }
-
-        return 0
-    }
-
-    make_i64 :: (value: u64, int_encoding: Int_Encoding) -> i64 {
-        switch int_encoding {
-            case .Twos_Complement, .Fixed {
-                return value
-            }
-
-            case .Zig_Zag {
-                if value & 1 == 0 {
-                    return cast(i64) (value >> 1)
-                } else {
-                    return -cast(i64) (value >> 1) - 1
-                }
-            }
-        }
-
-        return 0
-    }
+    return .{ Ok = true }
 }
 
 
@@ -263,11 +191,20 @@ Array.untyped_alloc_one :: (arr: &Untyped_Array, type: type_expr) -> rawptr {
         if new_data == null do return null
         arr.data = new_data
 
-        memory.set(memory.ptr_add(arr.data, element_size * arr.count), 0, element_size * arr.capacity)
+        memory.set(memory.ptr_add(arr.data, element_size * arr.count), 0, element_size * (arr.capacity - arr.count))
     }
 
     defer arr.count += 1
     return memory.ptr_add(arr.data, element_size * arr.count)
 }
 
+
+or_continue :: macro (x: ? $T) -> T {
+    switch x {
+        case .Some as v do return v
+        case .None do continue
+    }
 }
+
+}
+

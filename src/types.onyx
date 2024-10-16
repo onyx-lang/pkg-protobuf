@@ -9,14 +9,15 @@ Proto_Message_Descriptor :: struct {
 }
 
 Proto_Field_Descriptor :: struct {
-    field_offset: i32
+    field_offset:       i32
+    field_type_:        type_expr
 
-    // [..] for repeated, ? for optional, union for oneofs
-    field_type:   type_expr
+    is_optional:        bool
+    is_repeated:        bool
+    optional_offset:    u16
 
+    proto_field_type:   _Field_Type
     proto_field_number: i32
-
-    int_encoding: Int_Encoding
 }
 
 
@@ -25,14 +26,7 @@ Proto_Field_Descriptor :: struct {
 //
 
 Message :: #distinct void
-Field   :: struct { number: i32 }
-
-Int_Encoding :: enum {
-    Twos_Complement
-    Fixed
-    Zig_Zag
-}
-
+Field   :: struct { number: i32; protobuf_type: _Field_Type }
 
 
 #package
@@ -43,4 +37,26 @@ _Encoding_Type :: enum {
     SGROUP :: 3
     EGROUP :: 4
     I32    :: 5
+}
+
+#package
+_Field_Type :: enum {
+    DOUBLE :: 1
+    FLOAT :: 2
+    INT64 :: 3
+    UINT64 :: 4
+    INT32 :: 5
+    FIXED64 :: 6
+    FIXED32 :: 7
+    BOOL :: 8
+    STRING :: 9
+    GROUP :: 10
+    MESSAGE :: 11
+    BYTES :: 12
+    UINT32 :: 13
+    ENUM :: 14
+    SFIXED32 :: 15
+    SFIXED64 :: 16
+    SINT32 :: 17
+    SINT64 :: 18
 }

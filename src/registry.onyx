@@ -23,21 +23,34 @@ proto_types_preloaded :: #init () {
         fields := make([] Proto_Field_Descriptor, struct_info.members.length)
         for member, index in struct_info.members {
             fields[index].field_offset = member.offset
-            fields[index].field_type   = member.type
-            fields[index].proto_field_number = member.tags
-                |> .find_opt([x](x.type == Field))
-                |> .transform(x => misc.any_as(x, Field).number)
-                |> .value_or(0)
 
-            fields[index].int_encoding = member.tags
-                |> .find_opt([x](x.type == Int_Encoding))
-                |> .transform(x => *misc.any_as(x, Int_Encoding))
-                |> .value_or(.Twos_Complement)
-            
-            // Floats are always encoded as fixed ints
-            if member.type == f32 || member.type == f64 {
-                fields[index].int_encoding = .Fixed
+            type_info := member.type->info()
+            switch type_info.kind {
+                case .Basic {
+                    fields[index].field_type_ = member.type
+                }
+
+                case .Dynamic_Array {
+                    fields[index].field_type_ = type_info->as_dynamic_array().of
+                    fields[index].is_repeated = true
+                }
+
+                case .Union {
+                    if type_info->as_union().constructed_from == Optional {
+                        fields[index].field_type_ = type_info->as_union().variants[1].type
+                        fields[index].is_optional = true
+                        fields[index].optional_offset = ~~ type_info.alignment
+                    }
+                }
             }
+
+            member.tags
+                |> .find_opt([x](x.type == Field))
+                |> .transform(x => *misc.any_as(x, Field))
+                |> .with([fi] {
+                    fields[index].proto_field_type   = fi.protobuf_type 
+                    fields[index].proto_field_number = fi.number
+                })
         }
 
         register_proto_type(it.type, .{ fields })
