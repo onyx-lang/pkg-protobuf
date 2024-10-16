@@ -10,6 +10,17 @@ Marshal_Error :: union {
     Unknown_Type: type_expr
 }
 
+marshal :: #match #local {}
+
+#overload
+marshal :: (input: $T) -> Result(str, Marshal_Error) {
+    v := input
+    dest := make(dyn_str)
+    encode_message(&v, T, &dest)?
+    return .{ Ok = dest }
+}
+
+#overload
 marshal :: (input: $T, dest: &dyn_str) -> Result(bool, Marshal_Error) {
     v := input
     return encode_message(&v, T, dest)

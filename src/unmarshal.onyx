@@ -66,6 +66,7 @@ parse_message :: (input: [] u8, out: rawptr, type: type_expr) -> Result(bool, Un
         }
         elseif dest_type_info.kind == .Basic {
             if field_value.bytes {
+                // TODO: Support reading packed encodings
                 continue
             }
 
