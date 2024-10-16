@@ -91,14 +91,14 @@ marshal :: (input: $T, dest: &dyn_str) -> Result(bool, Marshal_Error) {
             }
 
             case .SINT32 {
-                int_value  := *cast(& u32) element_pointer
-                uint_value := (int_value << 1) | (int_value >> 31)
+                int_value  := *cast(& i32) element_pointer
+                uint_value := (int_value << 1) ^ (int_value >>> 31)
                 encode_varint(~~ uint_value, dest)
             }
 
             case .SINT64 {
-                int_value  := *cast(& u64) element_pointer
-                uint_value := (int_value << 1) | (int_value >> 63)
+                int_value  := *cast(& i64) element_pointer
+                uint_value := (int_value << 1) ^ (int_value >>> 63)
                 encode_varint(uint_value, dest)
             }
 
