@@ -1,0 +1,201 @@
+package protobuf
+
+use core {Result, tprintf}
+use core.array {Untyped_Array}
+use core.memory
+use core.misc
+
+Marshal_Error :: union {
+    Err: str
+    Unknown_Type: type_expr
+}
+
+marshal :: (input: $T, dest: &dyn_str) -> Result(bool, Marshal_Error) {
+    v := input
+    return encode_message(&v, T, dest)
+}
+
+#package {
+    encode_message :: (val: rawptr, type: type_expr, dest: &dyn_str) -> Result(bool, Marshal_Error) {
+        if !registered_proto_types->has(type) do return .{ Err = .{ Unknown_Type = type } }
+
+        msg_desc := registered_proto_types->get_ptr(type)
+        for& field_desc in msg_desc.fields {
+            field_pointer   := memory.ptr_add(val, field_desc.field_offset)
+            field_type_info := field_desc.field_type->info()
+
+            field_encoding_type := get_encoding_type(field_desc)
+            field_wire_number := build_field_number(field_desc.proto_field_number, field_encoding_type)
+
+            if field_desc.field_type == str {
+                s := *cast(& str) field_pointer
+                encode_varint(field_wire_number, dest)
+                encode_varint(~~ s.length, dest)
+                dest->append(s)
+                continue
+            }
+
+            switch field_type_info.kind {
+                case .Basic, .Enum {
+                    encode_varint(field_wire_number, dest)
+                    encode_basic_value(
+                        field_pointer
+                        field_desc.field_type
+                        field_desc.int_encoding
+                        dest
+                    )?
+                }
+
+                case .Union {
+                    if field_type_info->as_union().constructed_from == Optional {
+                        is_some := *cast(& u8) field_pointer == 1
+                        if is_some {
+                            encode_varint(field_wire_number, dest)
+                            element_pointer := memory.ptr_add(field_pointer, field_type_info.alignment)
+                            element_type    := field_type_info->as_union().variants[1].type
+                            element_info    := element_type->info()
+
+                            encode_value_i_wish_could_refactor(element_pointer, element_type, field_desc.int_encoding, dest)?
+                        }
+                    }
+                }
+
+                case .Dynamic_Array {
+                    info         := field_type_info->as_dynamic_array()
+                    element_info := info.of->info()
+                    arr          := cast(&Untyped_Array) field_pointer
+
+                    // TODO: Support packed encoding
+                    for index in arr.count {
+                        element_pointer := memory.ptr_add(arr.data, element_info.size * index)
+
+                        encode_varint(field_wire_number, dest)
+                        encode_value_i_wish_could_refactor(element_pointer, info.of, field_desc.int_encoding, dest)?
+                    }
+                }
+            }
+        }
+
+        return .{ Ok = true }
+    }
+
+    encode_value_i_wish_could_refactor :: (element_pointer: rawptr, element_type: type_expr, int_encoding: Int_Encoding, dest: &dyn_str) -> Result(bool, Marshal_Error) {
+        element_info := element_type->info()
+
+        if element_info.kind == .Struct {
+            // Encode sub message
+            use tmp_buf := make(dyn_str, 16)
+            encode_message(element_pointer, element_type, &tmp_buf)?
+            encode_varint(~~ tmp_buf.length, dest)
+            dest->append(tmp_buf)
+
+        } elseif element_type == str { 
+            s := *cast(& str) element_pointer
+            encode_varint(~~ s.length, dest)
+            dest->append(s)
+
+        } else {
+            encode_basic_value(
+                element_pointer
+                element_type
+                int_encoding
+                dest
+            )?
+        }
+
+        return .{ Ok = true }
+    }
+
+    encode_basic_value :: (val: rawptr, type: type_expr, int_encoding: Int_Encoding, dest: &dyn_str) -> Result(bool, Marshal_Error) {
+        uint_value := get_u64_from_val(val, type)
+
+        switch int_encoding {
+            case .Zig_Zag {
+                int_value: i64 = uint_value
+                if int_value >= 0 do uint_value = int_value * 2
+                else              do uint_value = 2 * -int_value - 1
+
+                fallthrough
+            }
+
+            case .Twos_Complement {
+                encode_varint(uint_value, dest)
+            }
+
+            case .Fixed {
+                if type->info().size == 8 {
+                    dest->append(.{~~ &uint_value, 8})
+                } else {
+                    dest->append(.{~~ &uint_value, 4})
+                }
+            }
+        }
+
+        return .{ Ok = true }
+    }
+
+    encode_varint :: (val: u64, dest: &dyn_str) {
+        v := val
+        while v != 0 {
+            t := v & 0x7f
+            if v >= 0x80 {
+                t |= 0x80
+            }
+
+            dest->push(~~ t)
+            v >>= 7
+        }
+    }
+
+    build_field_number :: (field_num: i32, enc: _Encoding_Type) -> u64 {
+        return (cast(u64) field_num << 3) | ~~ enc
+    }
+
+    get_encoding_type :: (field_desc: &Proto_Field_Descriptor) -> _Encoding_Type {
+        type := get_underlying_field_type(field_desc.field_type)
+        type_info := type->info()
+
+
+        if field_desc.int_encoding == .Fixed {
+            size := type_info.size
+            if size == 4 do return .I32
+            if size == 8 do return .I64
+            panic("BAD SIZE")
+        }
+
+        if type_info.kind == .Basic do return .Varint
+
+        return .LEN
+    }
+
+    get_underlying_field_type :: (type: type_expr) -> type_expr {
+        info := type->info()
+        if info.kind == .Basic do return type
+        if info.kind == .Dynamic_Array do return info->as_dynamic_array().of
+        if info.kind == .Union {
+            if info->as_union().constructed_from == Optional {
+                return info->as_union().variants[1].type
+            }
+        }
+
+        panic(tprintf("unhandled type: {}", type))
+        return void
+    }
+
+    get_u64_from_val :: (val: rawptr, type: type_expr) -> u64 {
+        switch type {
+            case bool do return ~~(1 if *cast(& bool) val else 0)
+
+            case f32, i32, u32 do return ~~ *cast(& u32) val
+            case f64, i64, u64 do return    *cast(& u64) val
+        }
+
+        if type->info().kind == .Enum {
+            // TODO: handle non-u32 enum backing types
+            return ~~ *cast(& u32) val
+        }
+
+        panic("UNHANDLED")
+        return 0
+    }
+}

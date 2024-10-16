@@ -1,0 +1,3 @@
+package protobuf
+
+#load_all "./src"

@@ -1,0 +1,51 @@
+package protobuf
+
+use core {Result, tprintf}
+use core.memory
+use core.misc
+use runtime.info
+
+#package {
+    registered_proto_types: Map(type_expr, Proto_Message)
+}
+
+proto_types_preloaded :: #init () {
+    registered_proto_types->init()
+
+    for info.type_table {
+        if it.info.kind != .Struct do continue
+
+        struct_info := it.info->as_struct()
+        msg := switch Slice.find_opt(struct_info.tags, [x](x.type == Message)) {
+            case .Some as m => misc.any_as(m, Message)
+            case .None => do { continue; return null }
+        }
+
+        fields := make([] Proto_Field_Descriptor, struct_info.members.length)
+        for member, index in struct_info.members {
+            fields[index].field_offset = member.offset
+            fields[index].field_type   = member.type
+            fields[index].proto_field_number = member.tags
+                |> .find_opt([x](x.type == Field))
+                |> .transform(x => misc.any_as(x, Field).number)
+                |> .value_or(0)
+
+            fields[index].int_encoding = member.tags
+                |> .find_opt([x](x.type == Int_Encoding))
+                |> .transform(x => *misc.any_as(x, Int_Encoding))
+                |> .value_or(.Twos_Complement)
+            
+            // Floats are always encoded as fixed ints
+            if member.type == f32 || member.type == f64 {
+                fields[index].int_encoding = .Fixed
+            }
+        }
+
+        register_proto_type(it.type, .{ msg.name, fields })
+    }
+}
+
+register_proto_type :: (type: type_expr, desc: Proto_Message) {
+    registered_proto_types->put(type, desc)
+}
+

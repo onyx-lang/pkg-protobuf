@@ -1,0 +1,44 @@
+package protobuf.google.protobuf.compiler
+
+use protobuf
+
+@protobuf.Message.{}
+Version :: struct {
+    @protobuf.Field.{1}  major: ? i32
+    @protobuf.Field.{2}  minor: ? i32
+    @protobuf.Field.{3}  patch: ? i32
+    @protobuf.Field.{4}  suffix: ? str
+}
+
+@protobuf.Message.{}
+CodeGeneratorRequest :: struct {
+    @protobuf.Field.{1}   file_to_generate: [..] str
+    @protobuf.Field.{2}   parameter: ? str
+    @protobuf.Field.{15}  proto_file: [..] protobuf.google.protobuf.FileDescriptorProto
+    @protobuf.Field.{17}  source_file_descriptors: [..] protobuf.google.protobuf.FileDescriptorProto
+    @protobuf.Field.{3}   compiler_version: ? protobuf.google.protobuf.compiler.Version
+}
+
+@protobuf.Message.{}
+CodeGeneratorResponse :: struct {
+    @protobuf.Field.{1}   error: ? str
+    @protobuf.Field.{2}   supported_features: ? u64
+    @protobuf.Field.{3}   minimum_edition: ? i32
+    @protobuf.Field.{4}   maximum_edition: ? i32
+    @protobuf.Field.{15}  file: [..] protobuf.google.protobuf.compiler.CodeGeneratorResponse.File
+}
+
+@protobuf.Message.{}
+CodeGeneratorResponse.File :: struct {
+    @protobuf.Field.{1}   name: ? str
+    @protobuf.Field.{2}   insertion_point: ? str
+    @protobuf.Field.{15}  content: ? str
+    @protobuf.Field.{16}  generated_code_info: ? protobuf.google.protobuf.GeneratedCodeInfo
+}
+
+CodeGeneratorResponse.Feature :: enum {
+    FEATURE_NONE :: 0
+    FEATURE_PROTO3_OPTIONAL :: 1
+    FEATURE_SUPPORTS_EDITIONS :: 2
+}
+

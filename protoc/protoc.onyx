@@ -1,0 +1,197 @@
+#load "./../module"
+#load "./protos/proto.onyx"
+
+use core {*}
+use protobuf
+use protobuf.google.protobuf {
+    FileDescriptorProto
+    DescriptorProto
+    FieldDescriptorProto
+    EnumDescriptorProto
+}
+
+use protobuf.google.protobuf.compiler {
+    CodeGeneratorRequest
+    CodeGeneratorResponse
+}
+
+main :: () {
+    data := do {
+        use r := io.Reader.make(&stdio.stream)
+        return r->read_all()
+    }
+
+    request := protobuf.unmarshal(data, CodeGeneratorRequest)!
+
+    files := make([..] CodeGeneratorResponse.File)
+    for& file in request.proto_file {
+        generated_file := generate_file(file)
+        files->push(generated_file)
+    }
+
+    include_file_content := make(dyn_str)
+    include_file_content->append("package protobuf\n\n")
+
+    for& file in files {
+        include_file_content->append(tprintf("#load \"./{}\"\n", file.name!))
+    }
+    files->push(.{ name = "proto.onyx", content = include_file_content })
+
+    response: dyn_str
+    protobuf.marshal(CodeGeneratorResponse.{
+        supported_features = 1
+        file = files
+    }, &response)
+
+    io.stream_write(&stdio.stream, response)
+}
+
+generate_file :: (file: &FileDescriptorProto) -> CodeGeneratorResponse.File {
+    name := tprintf("{}.onyx", file.name->expect("expected file to have a name"))
+
+    content := make(dyn_str)
+
+    content->append(tprintf("package protobuf.{}\n\n", file.package_->expect("expected file to have a package")))
+    content->append("use protobuf\n\n")
+
+    for& msg in file.message_type {
+        output_message_type(&content, msg, "")
+    }
+
+    for& enum_type in file.enum_type {
+        output_enum_type(&content, enum_type, "")
+    }
+
+    return .{
+        name = name
+        content = content
+    }
+}
+
+output_message_type :: (content: &dyn_str, msg: &DescriptorProto, parent_type: str) {
+    content->append("@protobuf.Message.{}\n")
+
+    if parent_type {
+        content->append(parent_type)
+        content->append(".")
+    }
+    content->append(msg.name!)
+    content->append(" :: struct {\n")
+
+    highest_field_number := Slice.fold(msg.field, 0, [x, y](math.max(y, x.number!)))
+    space := 2 + tprintf("{}", highest_field_number).length
+
+    for& field, index in msg.field {
+        type := field.type!
+        if type == .TYPE_SINT32 || type == .TYPE_SINT64 {
+            content->append("    @protobuf.Int_Encoding.Zig_Zag\n")
+        }
+        if type == .TYPE_FIXED32 || type == .TYPE_FIXED64 || type == .TYPE_SFIXED32 || type == .TYPE_SFIXED64 {
+            content->append("    @protobuf.Int_Encoding.Fixed\n")
+        }
+
+        number := tprintf("{}", field.number!)
+
+        content->append(tprintf("    @protobuf.Field.{{{}}}", number))
+        for space - number.length do content->append(' ')
+
+        content->append(safe_field_name(field.name!))
+        content->append(": ")
+
+        label := field.label ?? FieldDescriptorProto.Label.LABEL_REQUIRED
+        switch label {
+            case .LABEL_OPTIONAL do content->append("? ")
+            case .LABEL_REPEATED do content->append("[..] ")
+        }
+
+        content->append(switch type {
+            case .TYPE_DOUBLE  => "f64"
+            case .TYPE_FLOAT  => "f32"
+            case .TYPE_INT64  => "i64"
+            case .TYPE_UINT64  => "u64"
+            case .TYPE_INT32  => "i32"
+            case .TYPE_FIXED64  => "i64"
+            case .TYPE_FIXED32  => "i32"
+            case .TYPE_BOOL  => "bool"
+            case .TYPE_STRING  => "str"
+            case .TYPE_GROUP  => "oh_no_group_is_not_supported"
+            case .TYPE_MESSAGE  => tprintf("protobuf{}", field.type_name!)
+            case .TYPE_BYTES  => "[] u8"
+            case .TYPE_UINT32  => "u32"
+            case .TYPE_ENUM  => tprintf("protobuf{}", field.type_name!)
+            case .TYPE_SFIXED32  => "i32"
+            case .TYPE_SFIXED64  => "i64"
+            case .TYPE_SINT32  => "i32"
+            case .TYPE_SINT64  => "i64"
+        })
+
+        field.options |> .with([o] {
+            if o.deprecated ?? false {
+                content->append("  // deprecated")
+            }
+        })
+
+        content->append("\n")
+    }
+
+    content->append("}\n\n")
+
+    next_parent_type := do {
+        if parent_type do return tprintf("{}.{}", parent_type, msg.name!)
+        else do return msg.name!
+    }
+
+    for& inner_msg in msg.nested_type {
+        output_message_type(content, inner_msg, next_parent_type)
+    }
+
+    for& inner_enum in msg.enum_type {
+        output_enum_type(content, inner_enum, next_parent_type)
+    }
+}
+
+output_enum_type :: (content: &dyn_str, enum_type: &EnumDescriptorProto, parent_type: str) {
+    if parent_type {
+        content->append(parent_type)
+        content->append(".")
+    }
+    content->append(enum_type.name!)
+    content->append(" :: enum {\n")
+
+    for& value, index in enum_type.value {
+        content->append("    ")
+        content->append(value.name!)
+        content->append(" :: ")
+        content->append(tprintf("{}", value.number!))
+
+        value.options |> .with([o] {
+            if o.deprecated ?? false {
+                content->append("  // deprecated")
+            }
+        })
+
+        content->append("\n")
+    }
+
+    content->append("}\n\n")
+}
+
+safe_field_name :: (s: str) -> str {
+    #persist
+    keywords := str.[
+        "while", "do",
+        "for", "in",
+        "switch", "case",
+        "interface", "where", "as",
+        "struct", "enum", "union",
+        "package", "use",
+        "cast", "sizeof", "typeof", "alignof"
+    ]
+
+    if Slice.contains(keywords, s) {
+        return tprintf("{}_", s)
+    }
+
+    return s
+}
+

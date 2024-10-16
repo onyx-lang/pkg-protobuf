@@ -1,0 +1,439 @@
+package protobuf.google.protobuf
+
+use protobuf
+
+@protobuf.Message.{}
+FileDescriptorSet :: struct {
+    @protobuf.Field.{1}  file: [..] protobuf.google.protobuf.FileDescriptorProto
+}
+
+@protobuf.Message.{}
+FileDescriptorProto :: struct {
+    @protobuf.Field.{1}   name: ? str
+    @protobuf.Field.{2}   package_: ? str
+    @protobuf.Field.{3}   dependency: [..] str
+    @protobuf.Field.{10}  public_dependency: [..] i32
+    @protobuf.Field.{11}  weak_dependency: [..] i32
+    @protobuf.Field.{4}   message_type: [..] protobuf.google.protobuf.DescriptorProto
+    @protobuf.Field.{5}   enum_type: [..] protobuf.google.protobuf.EnumDescriptorProto
+    @protobuf.Field.{6}   service: [..] protobuf.google.protobuf.ServiceDescriptorProto
+    @protobuf.Field.{7}   extension: [..] protobuf.google.protobuf.FieldDescriptorProto
+    @protobuf.Field.{8}   options: ? protobuf.google.protobuf.FileOptions
+    @protobuf.Field.{9}   source_code_info: ? protobuf.google.protobuf.SourceCodeInfo
+    @protobuf.Field.{12}  syntax: ? str
+    @protobuf.Field.{14}  edition: ? protobuf.google.protobuf.Edition
+}
+
+@protobuf.Message.{}
+DescriptorProto :: struct {
+    @protobuf.Field.{1}   name: ? str
+    @protobuf.Field.{2}   field: [..] protobuf.google.protobuf.FieldDescriptorProto
+    @protobuf.Field.{6}   extension: [..] protobuf.google.protobuf.FieldDescriptorProto
+    @protobuf.Field.{3}   nested_type: [..] protobuf.google.protobuf.DescriptorProto
+    @protobuf.Field.{4}   enum_type: [..] protobuf.google.protobuf.EnumDescriptorProto
+    @protobuf.Field.{5}   extension_range: [..] protobuf.google.protobuf.DescriptorProto.ExtensionRange
+    @protobuf.Field.{8}   oneof_decl: [..] protobuf.google.protobuf.OneofDescriptorProto
+    @protobuf.Field.{7}   options: ? protobuf.google.protobuf.MessageOptions
+    @protobuf.Field.{9}   reserved_range: [..] protobuf.google.protobuf.DescriptorProto.ReservedRange
+    @protobuf.Field.{10}  reserved_name: [..] str
+}
+
+@protobuf.Message.{}
+DescriptorProto.ExtensionRange :: struct {
+    @protobuf.Field.{1}  start: ? i32
+    @protobuf.Field.{2}  end: ? i32
+    @protobuf.Field.{3}  options: ? protobuf.google.protobuf.ExtensionRangeOptions
+}
+
+@protobuf.Message.{}
+DescriptorProto.ReservedRange :: struct {
+    @protobuf.Field.{1}  start: ? i32
+    @protobuf.Field.{2}  end: ? i32
+}
+
+@protobuf.Message.{}
+ExtensionRangeOptions :: struct {
+    @protobuf.Field.{999}  uninterpreted_option: [..] protobuf.google.protobuf.UninterpretedOption
+    @protobuf.Field.{2}    declaration: [..] protobuf.google.protobuf.ExtensionRangeOptions.Declaration
+    @protobuf.Field.{50}   features: ? protobuf.google.protobuf.FeatureSet
+    @protobuf.Field.{3}    verification: ? protobuf.google.protobuf.ExtensionRangeOptions.VerificationState
+}
+
+@protobuf.Message.{}
+ExtensionRangeOptions.Declaration :: struct {
+    @protobuf.Field.{1}  number: ? i32
+    @protobuf.Field.{2}  full_name: ? str
+    @protobuf.Field.{3}  type: ? str
+    @protobuf.Field.{5}  reserved: ? bool
+    @protobuf.Field.{6}  repeated: ? bool
+}
+
+ExtensionRangeOptions.VerificationState :: enum {
+    DECLARATION :: 0
+    UNVERIFIED :: 1
+}
+
+@protobuf.Message.{}
+FieldDescriptorProto :: struct {
+    @protobuf.Field.{1}   name: ? str
+    @protobuf.Field.{3}   number: ? i32
+    @protobuf.Field.{4}   label: ? protobuf.google.protobuf.FieldDescriptorProto.Label
+    @protobuf.Field.{5}   type: ? protobuf.google.protobuf.FieldDescriptorProto.Type
+    @protobuf.Field.{6}   type_name: ? str
+    @protobuf.Field.{2}   extendee: ? str
+    @protobuf.Field.{7}   default_value: ? str
+    @protobuf.Field.{9}   oneof_index: ? i32
+    @protobuf.Field.{10}  json_name: ? str
+    @protobuf.Field.{8}   options: ? protobuf.google.protobuf.FieldOptions
+    @protobuf.Field.{17}  proto3_optional: ? bool
+}
+
+FieldDescriptorProto.Type :: enum {
+    TYPE_DOUBLE :: 1
+    TYPE_FLOAT :: 2
+    TYPE_INT64 :: 3
+    TYPE_UINT64 :: 4
+    TYPE_INT32 :: 5
+    TYPE_FIXED64 :: 6
+    TYPE_FIXED32 :: 7
+    TYPE_BOOL :: 8
+    TYPE_STRING :: 9
+    TYPE_GROUP :: 10
+    TYPE_MESSAGE :: 11
+    TYPE_BYTES :: 12
+    TYPE_UINT32 :: 13
+    TYPE_ENUM :: 14
+    TYPE_SFIXED32 :: 15
+    TYPE_SFIXED64 :: 16
+    TYPE_SINT32 :: 17
+    TYPE_SINT64 :: 18
+}
+
+FieldDescriptorProto.Label :: enum {
+    LABEL_OPTIONAL :: 1
+    LABEL_REPEATED :: 3
+    LABEL_REQUIRED :: 2
+}
+
+@protobuf.Message.{}
+OneofDescriptorProto :: struct {
+    @protobuf.Field.{1}  name: ? str
+    @protobuf.Field.{2}  options: ? protobuf.google.protobuf.OneofOptions
+}
+
+@protobuf.Message.{}
+EnumDescriptorProto :: struct {
+    @protobuf.Field.{1}  name: ? str
+    @protobuf.Field.{2}  value: [..] protobuf.google.protobuf.EnumValueDescriptorProto
+    @protobuf.Field.{3}  options: ? protobuf.google.protobuf.EnumOptions
+    @protobuf.Field.{4}  reserved_range: [..] protobuf.google.protobuf.EnumDescriptorProto.EnumReservedRange
+    @protobuf.Field.{5}  reserved_name: [..] str
+}
+
+@protobuf.Message.{}
+EnumDescriptorProto.EnumReservedRange :: struct {
+    @protobuf.Field.{1}  start: ? i32
+    @protobuf.Field.{2}  end: ? i32
+}
+
+@protobuf.Message.{}
+EnumValueDescriptorProto :: struct {
+    @protobuf.Field.{1}  name: ? str
+    @protobuf.Field.{2}  number: ? i32
+    @protobuf.Field.{3}  options: ? protobuf.google.protobuf.EnumValueOptions
+}
+
+@protobuf.Message.{}
+ServiceDescriptorProto :: struct {
+    @protobuf.Field.{1}  name: ? str
+    @protobuf.Field.{2}  method: [..] protobuf.google.protobuf.MethodDescriptorProto
+    @protobuf.Field.{3}  options: ? protobuf.google.protobuf.ServiceOptions
+}
+
+@protobuf.Message.{}
+MethodDescriptorProto :: struct {
+    @protobuf.Field.{1}  name: ? str
+    @protobuf.Field.{2}  input_type: ? str
+    @protobuf.Field.{3}  output_type: ? str
+    @protobuf.Field.{4}  options: ? protobuf.google.protobuf.MethodOptions
+    @protobuf.Field.{5}  client_streaming: ? bool
+    @protobuf.Field.{6}  server_streaming: ? bool
+}
+
+@protobuf.Message.{}
+FileOptions :: struct {
+    @protobuf.Field.{1}    java_package: ? str
+    @protobuf.Field.{8}    java_outer_classname: ? str
+    @protobuf.Field.{10}   java_multiple_files: ? bool
+    @protobuf.Field.{20}   java_generate_equals_and_hash: ? bool  // deprecated
+    @protobuf.Field.{27}   java_string_check_utf8: ? bool
+    @protobuf.Field.{9}    optimize_for: ? protobuf.google.protobuf.FileOptions.OptimizeMode
+    @protobuf.Field.{11}   go_package: ? str
+    @protobuf.Field.{16}   cc_generic_services: ? bool
+    @protobuf.Field.{17}   java_generic_services: ? bool
+    @protobuf.Field.{18}   py_generic_services: ? bool
+    @protobuf.Field.{23}   deprecated: ? bool
+    @protobuf.Field.{31}   cc_enable_arenas: ? bool
+    @protobuf.Field.{36}   objc_class_prefix: ? str
+    @protobuf.Field.{37}   csharp_namespace: ? str
+    @protobuf.Field.{39}   swift_prefix: ? str
+    @protobuf.Field.{40}   php_class_prefix: ? str
+    @protobuf.Field.{41}   php_namespace: ? str
+    @protobuf.Field.{44}   php_metadata_namespace: ? str
+    @protobuf.Field.{45}   ruby_package: ? str
+    @protobuf.Field.{50}   features: ? protobuf.google.protobuf.FeatureSet
+    @protobuf.Field.{999}  uninterpreted_option: [..] protobuf.google.protobuf.UninterpretedOption
+}
+
+FileOptions.OptimizeMode :: enum {
+    SPEED :: 1
+    CODE_SIZE :: 2
+    LITE_RUNTIME :: 3
+}
+
+@protobuf.Message.{}
+MessageOptions :: struct {
+    @protobuf.Field.{1}    message_set_wire_format: ? bool
+    @protobuf.Field.{2}    no_standard_descriptor_accessor: ? bool
+    @protobuf.Field.{3}    deprecated: ? bool
+    @protobuf.Field.{7}    map_entry: ? bool
+    @protobuf.Field.{11}   deprecated_legacy_json_field_conflicts: ? bool  // deprecated
+    @protobuf.Field.{12}   features: ? protobuf.google.protobuf.FeatureSet
+    @protobuf.Field.{999}  uninterpreted_option: [..] protobuf.google.protobuf.UninterpretedOption
+}
+
+@protobuf.Message.{}
+FieldOptions :: struct {
+    @protobuf.Field.{1}    ctype: ? protobuf.google.protobuf.FieldOptions.CType
+    @protobuf.Field.{2}    packed: ? bool
+    @protobuf.Field.{6}    jstype: ? protobuf.google.protobuf.FieldOptions.JSType
+    @protobuf.Field.{5}    lazy: ? bool
+    @protobuf.Field.{15}   unverified_lazy: ? bool
+    @protobuf.Field.{3}    deprecated: ? bool
+    @protobuf.Field.{10}   weak: ? bool
+    @protobuf.Field.{16}   debug_redact: ? bool
+    @protobuf.Field.{17}   retention: ? protobuf.google.protobuf.FieldOptions.OptionRetention
+    @protobuf.Field.{19}   targets: [..] protobuf.google.protobuf.FieldOptions.OptionTargetType
+    @protobuf.Field.{20}   edition_defaults: [..] protobuf.google.protobuf.FieldOptions.EditionDefault
+    @protobuf.Field.{21}   features: ? protobuf.google.protobuf.FeatureSet
+    @protobuf.Field.{22}   feature_support: ? protobuf.google.protobuf.FieldOptions.FeatureSupport
+    @protobuf.Field.{999}  uninterpreted_option: [..] protobuf.google.protobuf.UninterpretedOption
+}
+
+@protobuf.Message.{}
+FieldOptions.EditionDefault :: struct {
+    @protobuf.Field.{3}  edition: ? protobuf.google.protobuf.Edition
+    @protobuf.Field.{2}  value: ? str
+}
+
+@protobuf.Message.{}
+FieldOptions.FeatureSupport :: struct {
+    @protobuf.Field.{1}  edition_introduced: ? protobuf.google.protobuf.Edition
+    @protobuf.Field.{2}  edition_deprecated: ? protobuf.google.protobuf.Edition
+    @protobuf.Field.{3}  deprecation_warning: ? str
+    @protobuf.Field.{4}  edition_removed: ? protobuf.google.protobuf.Edition
+}
+
+FieldOptions.CType :: enum {
+    STRING :: 0
+    CORD :: 1
+    STRING_PIECE :: 2
+}
+
+FieldOptions.JSType :: enum {
+    JS_NORMAL :: 0
+    JS_STRING :: 1
+    JS_NUMBER :: 2
+}
+
+FieldOptions.OptionRetention :: enum {
+    RETENTION_UNKNOWN :: 0
+    RETENTION_RUNTIME :: 1
+    RETENTION_SOURCE :: 2
+}
+
+FieldOptions.OptionTargetType :: enum {
+    TARGET_TYPE_UNKNOWN :: 0
+    TARGET_TYPE_FILE :: 1
+    TARGET_TYPE_EXTENSION_RANGE :: 2
+    TARGET_TYPE_MESSAGE :: 3
+    TARGET_TYPE_FIELD :: 4
+    TARGET_TYPE_ONEOF :: 5
+    TARGET_TYPE_ENUM :: 6
+    TARGET_TYPE_ENUM_ENTRY :: 7
+    TARGET_TYPE_SERVICE :: 8
+    TARGET_TYPE_METHOD :: 9
+}
+
+@protobuf.Message.{}
+OneofOptions :: struct {
+    @protobuf.Field.{1}    features: ? protobuf.google.protobuf.FeatureSet
+    @protobuf.Field.{999}  uninterpreted_option: [..] protobuf.google.protobuf.UninterpretedOption
+}
+
+@protobuf.Message.{}
+EnumOptions :: struct {
+    @protobuf.Field.{2}    allow_alias: ? bool
+    @protobuf.Field.{3}    deprecated: ? bool
+    @protobuf.Field.{6}    deprecated_legacy_json_field_conflicts: ? bool  // deprecated
+    @protobuf.Field.{7}    features: ? protobuf.google.protobuf.FeatureSet
+    @protobuf.Field.{999}  uninterpreted_option: [..] protobuf.google.protobuf.UninterpretedOption
+}
+
+@protobuf.Message.{}
+EnumValueOptions :: struct {
+    @protobuf.Field.{1}    deprecated: ? bool
+    @protobuf.Field.{2}    features: ? protobuf.google.protobuf.FeatureSet
+    @protobuf.Field.{3}    debug_redact: ? bool
+    @protobuf.Field.{4}    feature_support: ? protobuf.google.protobuf.FieldOptions.FeatureSupport
+    @protobuf.Field.{999}  uninterpreted_option: [..] protobuf.google.protobuf.UninterpretedOption
+}
+
+@protobuf.Message.{}
+ServiceOptions :: struct {
+    @protobuf.Field.{34}   features: ? protobuf.google.protobuf.FeatureSet
+    @protobuf.Field.{33}   deprecated: ? bool
+    @protobuf.Field.{999}  uninterpreted_option: [..] protobuf.google.protobuf.UninterpretedOption
+}
+
+@protobuf.Message.{}
+MethodOptions :: struct {
+    @protobuf.Field.{33}   deprecated: ? bool
+    @protobuf.Field.{34}   idempotency_level: ? protobuf.google.protobuf.MethodOptions.IdempotencyLevel
+    @protobuf.Field.{35}   features: ? protobuf.google.protobuf.FeatureSet
+    @protobuf.Field.{999}  uninterpreted_option: [..] protobuf.google.protobuf.UninterpretedOption
+}
+
+MethodOptions.IdempotencyLevel :: enum {
+    IDEMPOTENCY_UNKNOWN :: 0
+    NO_SIDE_EFFECTS :: 1
+    IDEMPOTENT :: 2
+}
+
+@protobuf.Message.{}
+UninterpretedOption :: struct {
+    @protobuf.Field.{2}  name: [..] protobuf.google.protobuf.UninterpretedOption.NamePart
+    @protobuf.Field.{3}  identifier_value: ? str
+    @protobuf.Field.{4}  positive_int_value: ? u64
+    @protobuf.Field.{5}  negative_int_value: ? i64
+    @protobuf.Field.{6}  double_value: ? f64
+    @protobuf.Field.{7}  string_value: ? [] u8
+    @protobuf.Field.{8}  aggregate_value: ? str
+}
+
+@protobuf.Message.{}
+UninterpretedOption.NamePart :: struct {
+    @protobuf.Field.{1}  name_part: str
+    @protobuf.Field.{2}  is_extension: bool
+}
+
+@protobuf.Message.{}
+FeatureSet :: struct {
+    @protobuf.Field.{1}  field_presence: ? protobuf.google.protobuf.FeatureSet.FieldPresence
+    @protobuf.Field.{2}  enum_type: ? protobuf.google.protobuf.FeatureSet.EnumType
+    @protobuf.Field.{3}  repeated_field_encoding: ? protobuf.google.protobuf.FeatureSet.RepeatedFieldEncoding
+    @protobuf.Field.{4}  utf8_validation: ? protobuf.google.protobuf.FeatureSet.Utf8Validation
+    @protobuf.Field.{5}  message_encoding: ? protobuf.google.protobuf.FeatureSet.MessageEncoding
+    @protobuf.Field.{6}  json_format: ? protobuf.google.protobuf.FeatureSet.JsonFormat
+}
+
+FeatureSet.FieldPresence :: enum {
+    FIELD_PRESENCE_UNKNOWN :: 0
+    EXPLICIT :: 1
+    IMPLICIT :: 2
+    LEGACY_REQUIRED :: 3
+}
+
+FeatureSet.EnumType :: enum {
+    ENUM_TYPE_UNKNOWN :: 0
+    OPEN :: 1
+    CLOSED :: 2
+}
+
+FeatureSet.RepeatedFieldEncoding :: enum {
+    REPEATED_FIELD_ENCODING_UNKNOWN :: 0
+    PACKED :: 1
+    EXPANDED :: 2
+}
+
+FeatureSet.Utf8Validation :: enum {
+    UTF8_VALIDATION_UNKNOWN :: 0
+    VERIFY :: 2
+    NONE :: 3
+}
+
+FeatureSet.MessageEncoding :: enum {
+    MESSAGE_ENCODING_UNKNOWN :: 0
+    LENGTH_PREFIXED :: 1
+    DELIMITED :: 2
+}
+
+FeatureSet.JsonFormat :: enum {
+    JSON_FORMAT_UNKNOWN :: 0
+    ALLOW :: 1
+    LEGACY_BEST_EFFORT :: 2
+}
+
+@protobuf.Message.{}
+FeatureSetDefaults :: struct {
+    @protobuf.Field.{1}  defaults: [..] protobuf.google.protobuf.FeatureSetDefaults.FeatureSetEditionDefault
+    @protobuf.Field.{4}  minimum_edition: ? protobuf.google.protobuf.Edition
+    @protobuf.Field.{5}  maximum_edition: ? protobuf.google.protobuf.Edition
+}
+
+@protobuf.Message.{}
+FeatureSetDefaults.FeatureSetEditionDefault :: struct {
+    @protobuf.Field.{3}  edition: ? protobuf.google.protobuf.Edition
+    @protobuf.Field.{4}  overridable_features: ? protobuf.google.protobuf.FeatureSet
+    @protobuf.Field.{5}  fixed_features: ? protobuf.google.protobuf.FeatureSet
+}
+
+@protobuf.Message.{}
+SourceCodeInfo :: struct {
+    @protobuf.Field.{1}  location: [..] protobuf.google.protobuf.SourceCodeInfo.Location
+}
+
+@protobuf.Message.{}
+SourceCodeInfo.Location :: struct {
+    @protobuf.Field.{1}  path: [..] i32
+    @protobuf.Field.{2}  span: [..] i32
+    @protobuf.Field.{3}  leading_comments: ? str
+    @protobuf.Field.{4}  trailing_comments: ? str
+    @protobuf.Field.{6}  leading_detached_comments: [..] str
+}
+
+@protobuf.Message.{}
+GeneratedCodeInfo :: struct {
+    @protobuf.Field.{1}  annotation: [..] protobuf.google.protobuf.GeneratedCodeInfo.Annotation
+}
+
+@protobuf.Message.{}
+GeneratedCodeInfo.Annotation :: struct {
+    @protobuf.Field.{1}  path: [..] i32
+    @protobuf.Field.{2}  source_file: ? str
+    @protobuf.Field.{3}  begin: ? i32
+    @protobuf.Field.{4}  end: ? i32
+    @protobuf.Field.{5}  semantic: ? protobuf.google.protobuf.GeneratedCodeInfo.Annotation.Semantic
+}
+
+GeneratedCodeInfo.Annotation.Semantic :: enum {
+    NONE :: 0
+    SET :: 1
+    ALIAS :: 2
+}
+
+Edition :: enum {
+    EDITION_UNKNOWN :: 0
+    EDITION_LEGACY :: 900
+    EDITION_PROTO2 :: 998
+    EDITION_PROTO3 :: 999
+    EDITION_2023 :: 1000
+    EDITION_2024 :: 1001
+    EDITION_1_TEST_ONLY :: 1
+    EDITION_2_TEST_ONLY :: 2
+    EDITION_99997_TEST_ONLY :: 99997
+    EDITION_99998_TEST_ONLY :: 99998
+    EDITION_99999_TEST_ONLY :: 99999
+    EDITION_MAX :: 2147483647
+}
+

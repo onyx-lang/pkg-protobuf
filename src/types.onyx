@@ -1,0 +1,43 @@
+package protobuf
+
+Proto_Field_Descriptor :: struct {
+    field_offset: i32
+
+    // [..] for repeated, ? for optional, union for oneofs
+    field_type:   type_expr
+
+    proto_field_number: i32
+
+    int_encoding: Int_Encoding
+}
+
+Proto_Message :: struct {
+    name: str
+    fields: [] Proto_Field_Descriptor
+}
+
+
+//
+// Tag Types
+//
+
+Message :: struct { name: str }
+Field   :: struct { number: i32 }
+
+Int_Encoding :: enum {
+    Twos_Complement
+    Fixed
+    Zig_Zag
+}
+
+
+
+#package
+_Encoding_Type :: enum {
+    Varint :: 0
+    I64    :: 1
+    LEN    :: 2
+    SGROUP :: 3
+    EGROUP :: 4
+    I32    :: 5
+}
