@@ -47,12 +47,11 @@ marshal :: (input: $T, dest: &dyn_str) -> Result(bool, Marshal_Error) {
             }
 
             elseif field_desc.is_repeated {
-                element_info := field_desc.field_type_->info()
-                arr          := cast(&Untyped_Array) field_pointer
+                arr := cast(&Untyped_Array) field_pointer
 
                 // TODO: Support packed encoding
                 for index in arr.count {
-                    element_pointer := memory.ptr_add(arr.data, element_info.size * index)
+                    element_pointer := memory.ptr_add(arr.data, field_desc.field_size * index)
 
                     encode_varint(field_wire_number, dest)
                     encode_value(element_pointer, field_desc, dest)?
@@ -78,7 +77,7 @@ marshal :: (input: $T, dest: &dyn_str) -> Result(bool, Marshal_Error) {
 
             case .MESSAGE {
                 use tmp_buf := make(dyn_str, 16)
-                encode_message(element_pointer, desc.field_type_, &tmp_buf)?
+                encode_message(element_pointer, desc.field_type, &tmp_buf)?
                 encode_varint(~~ tmp_buf.length, dest)
                 dest->append(tmp_buf)
             }
@@ -111,14 +110,12 @@ marshal :: (input: $T, dest: &dyn_str) -> Result(bool, Marshal_Error) {
                 encode_varint(~~ *cast(& u32) element_pointer, dest)
             }
 
-            case _ {
-                uint_value := do -> u64 {
-                    return switch desc.field_type_ {
-                        case i32, u32 => ~~ *cast(& u32) element_pointer
-                        case i64, u64 => ~~ *cast(& u64) element_pointer
-                    }
-                }
-                encode_varint(uint_value, dest)
+            case .INT32, .UINT32 {
+                encode_varint(~~ *cast(& u32) element_pointer, dest)
+            }
+
+            case .INT64, .UINT64 {
+                encode_varint(*cast(& u64) element_pointer, dest)
             }
         }
 

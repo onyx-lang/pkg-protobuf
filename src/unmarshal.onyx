@@ -58,7 +58,7 @@ parse_message :: (input: [] u8, out: rawptr, type: type_expr) -> Result(bool, Un
         }
 
         if field_desc.is_repeated {
-            field_pointer = Array.untyped_alloc_one(~~ field_pointer, field_desc.field_type_)
+            field_pointer = Array.untyped_alloc_one(~~ field_pointer, field_desc.field_type)
         }
 
         store_value(field_pointer, &field_desc, field_value)?
@@ -184,7 +184,7 @@ store_value :: (out: rawptr, desc: &Proto_Field_Descriptor, value: _Field_Value)
         }
 
         case .MESSAGE {
-            parse_message(value.bytes!, out, desc.field_type_)?
+            parse_message(value.bytes!, out, desc.field_type)?
         }
     }
 

@@ -9,12 +9,13 @@ Proto_Message_Descriptor :: struct {
 }
 
 Proto_Field_Descriptor :: struct {
-    field_offset:       i32
-    field_type_:        type_expr
-
     is_optional:        bool
     is_repeated:        bool
     optional_offset:    u16
+
+    field_offset:       i32
+    field_size:         i32
+    field_type:         type_expr
 
     proto_field_type:   _Field_Type
     proto_field_number: i32

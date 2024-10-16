@@ -27,17 +27,20 @@ proto_types_preloaded :: #init () {
             type_info := member.type->info()
             switch type_info.kind {
                 case .Basic {
-                    fields[index].field_type_ = member.type
+                    fields[index].field_size = type_info.size
+                    fields[index].field_type = member.type
                 }
 
                 case .Dynamic_Array {
-                    fields[index].field_type_ = type_info->as_dynamic_array().of
+                    fields[index].field_type = type_info->as_dynamic_array().of
+                    fields[index].field_size = fields[index].field_type->info().size
                     fields[index].is_repeated = true
                 }
 
                 case .Union {
                     if type_info->as_union().constructed_from == Optional {
-                        fields[index].field_type_ = type_info->as_union().variants[1].type
+                        fields[index].field_type = type_info->as_union().variants[1].type
+                        fields[index].field_size = fields[index].field_type->info().size
                         fields[index].is_optional = true
                         fields[index].optional_offset = ~~ type_info.alignment
                     }
