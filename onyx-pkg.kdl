@@ -1,6 +1,6 @@
 package {
     name "protobuf" 
-    author "Brendan Hanse" 
+    author "Brendan Hansen"
     url "https://github.com/onyx-lang/pkg-protobuf" 
     description "ProtoBuf implementation for Onyx" 
     version "0.0.1" 
@@ -9,20 +9,5 @@ package {
 config {
     dependency_source_path "./lib" 
     dependency_binary_path "./bin" 
-}
-
-lsp {
-    mode "project" 
-    source_files "protoc/protoc" 
-    include_dirs "" 
-    working_dir "protoc" 
-}
-
-build {
-    protoc {
-        target ".onyx/protoc.wasm" 
-        source "protoc" 
-        working_dir "protoc"
-    }
 }
 

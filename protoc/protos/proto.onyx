@@ -1,2 +1,0 @@
-#load "./google/protobuf/descriptor.proto.onyx"
-#load "./src/google/protobuf/compiler/plugin.proto.onyx"
