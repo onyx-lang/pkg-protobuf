@@ -36,15 +36,17 @@ marshal :: (input: $T, dest: &dyn_str) -> Result(bool, Marshal_Error) {
             field_encoding_type := get_encoding_type(field_desc)
             field_wire_number   := build_field_number(field_desc.proto_field_number, field_encoding_type)
 
-            if field_desc.is_optional && *cast(& u8) field_pointer == 1 {
-                encode_varint(field_wire_number, dest)
+            if field_desc.is_optional {
+                if *cast(& u8) field_pointer == 1 {
+                    encode_varint(field_wire_number, dest)
 
-                element_pointer := memory.ptr_add(field_pointer, ~~ field_desc.optional_offset)
-                encode_value(element_pointer, field_desc, dest)?
-                continue
+                    element_pointer := memory.ptr_add(field_pointer, ~~ field_desc.optional_offset)
+                    encode_value(element_pointer, field_desc, dest)?
+                    continue
+                }
             }
 
-            if field_desc.is_repeated {
+            elseif field_desc.is_repeated {
                 element_info := field_desc.field_type_->info()
                 arr          := cast(&Untyped_Array) field_pointer
 
@@ -55,12 +57,12 @@ marshal :: (input: $T, dest: &dyn_str) -> Result(bool, Marshal_Error) {
                     encode_varint(field_wire_number, dest)
                     encode_value(element_pointer, field_desc, dest)?
                 }
-
-                continue
             }
 
-            encode_varint(field_wire_number, dest)
-            encode_value(field_pointer, field_desc, dest)?
+            else {
+                encode_varint(field_wire_number, dest)
+                encode_value(field_pointer, field_desc, dest)?
+            }
         }
 
         return .{ Ok = true }

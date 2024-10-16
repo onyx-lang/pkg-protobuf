@@ -47,9 +47,8 @@ parse_message :: (input: [] u8, out: rawptr, type: type_expr) -> Result(bool, Un
             continue
         }
 
-        field_value := parse_field_value(&data, field_header.encoding_type)?
-        field_desc  := Slice.find_opt(msg_desc.fields, [x](x.proto_field_number == field_header.proto_number)) |> or_continue
-
+        field_value   := parse_field_value(&data, field_header.encoding_type)?
+        field_desc    := Slice.find_opt(msg_desc.fields, [x](x.proto_field_number == field_header.proto_number)) |> or_continue
         field_pointer := memory.ptr_add(out, field_desc.field_offset)
 
         if field_desc.is_optional {
@@ -59,7 +58,7 @@ parse_message :: (input: [] u8, out: rawptr, type: type_expr) -> Result(bool, Un
         }
 
         if field_desc.is_repeated {
-            field_pointer = Array.untyped_alloc_one(~~ field_pointer, type)
+            field_pointer = Array.untyped_alloc_one(~~ field_pointer, field_desc.field_type_)
         }
 
         store_value(field_pointer, &field_desc, field_value)?
@@ -136,10 +135,20 @@ parse_varint :: (data: &[] u8) -> Result(u64, Unmarshal_Error) {
 store_value :: (out: rawptr, desc: &Proto_Field_Descriptor, value: _Field_Value) -> Result(bool, Unmarshal_Error) {
     switch desc.proto_field_type {
         // Some fun type punning here
-        case .DOUBLE, .INT64, .UINT64, .FIXED64, .SFIXED64 do *cast(& u64) out = value.number!
-        case .FLOAT,  .INT32, .UINT32, .FIXED32, .SFIXED32 do *cast(& u32) out = ~~ value.number!
+        case .DOUBLE, .INT64, .UINT64, .FIXED64, .SFIXED64 {
+            if value.bytes do return .{ Ok = true }
+
+            *cast(& u64) out = value.number!
+        }
+        case .FLOAT,  .INT32, .UINT32, .FIXED32, .SFIXED32 {
+            if value.bytes do return .{ Ok = true }
+
+            *cast(& u32) out = ~~ value.number!
+        }
 
         case .SINT32 {
+            if value.bytes do return .{ Ok = true }
+
             v := value.number!
             *cast(& i32) out = do {
                 if v & 1 == 0 do return cast(i32) (v >> 1)
@@ -149,6 +158,8 @@ store_value :: (out: rawptr, desc: &Proto_Field_Descriptor, value: _Field_Value)
         }
 
         case .SINT64 {
+            if value.bytes do return .{ Ok = true }
+
             v := value.number!
             *cast(& i64) out = do {
                 if v & 1 == 0 do return cast(i64) (v >> 1)
@@ -157,8 +168,16 @@ store_value :: (out: rawptr, desc: &Proto_Field_Descriptor, value: _Field_Value)
             }
         }
 
-        case .BOOL do *cast(& bool) out = value.number! != 0
-        case .ENUM do *cast(& u32)  out = ~~ value.number!
+        case .BOOL {
+            if value.bytes do return .{ Ok = true }
+
+            *cast(& bool) out = value.number! != 0
+        }
+        case .ENUM {
+            if value.bytes do return .{ Ok = true }
+
+            *cast(& u32)  out = ~~ value.number!
+        }
 
         case .STRING, .BYTES {
             *cast(& str) out = str.copy(value.bytes->expect("str should be encoded in len"))
