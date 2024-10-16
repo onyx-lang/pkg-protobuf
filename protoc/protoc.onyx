@@ -76,23 +76,11 @@ output_message_type :: (content: &dyn_str, msg: &DescriptorProto, parent_type: s
     content->append(msg.name!)
     content->append(" :: struct {\n")
 
-    highest_field_number := Slice.fold(msg.field, 0, [x, y](math.max(y, x.number!)))
-    space := 2 + tprintf("{}", highest_field_number).length
-
     for& field, index in msg.field {
         type := field.type!
-        if type == .TYPE_SINT32 || type == .TYPE_SINT64 {
-            content->append("    @protobuf.Int_Encoding.Zig_Zag\n")
-        }
-        if type == .TYPE_FIXED32 || type == .TYPE_FIXED64 || type == .TYPE_SFIXED32 || type == .TYPE_SFIXED64 {
-            content->append("    @protobuf.Int_Encoding.Fixed\n")
-        }
+        content->append(tprintf("    @protobuf.Field.{{{}, {}}}\n", field.number!, cast(u32) type))
 
-        number := tprintf("{}", field.number!)
-
-        content->append(tprintf("    @protobuf.Field.{{{}}}", number))
-        for space - number.length do content->append(' ')
-
+        content->append("    ")
         content->append(safe_field_name(field.name!))
         content->append(": ")
 
