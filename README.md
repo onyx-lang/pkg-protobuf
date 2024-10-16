@@ -21,11 +21,11 @@ You need to generate Onyx bindings using [protoc-gen-onyx](https://github.com/on
 
 Use this command,
 ```shell
-$ protoc --plugin=protoc-gen-onyx --onyx_out=protos api.proto
+$ protoc --onyx_out=protos api.proto
 ```
 
 To generate `protos/api.proto.onyx`.
-```odin
+```rust
 package protobuf.my_api
 
 use protobuf
@@ -41,7 +41,13 @@ Query :: struct {
 
 You can the `protobuf` package to marshal/unmarshal the data.
 
-```odin
+```rust
+// Load the packages in the project
+#load "./lib/packages.onyx"
+
+// Make sure you load the `proto.onyx` file from the out directory.
+#load "./protos/proto.onyx"
+
 use protobuf
 use protobuf.my_api { Query }
 
