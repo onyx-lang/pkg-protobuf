@@ -67,7 +67,7 @@ generate_file :: (file: &FileDescriptorProto) -> CodeGeneratorResponse.File {
 }
 
 output_message_type :: (content: &dyn_str, msg: &DescriptorProto, parent_type: str) {
-    content->append("@protobuf.Message.{}\n")
+    content->append("@protobuf.Message\n")
 
     if parent_type {
         content->append(parent_type)

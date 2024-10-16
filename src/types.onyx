@@ -1,5 +1,13 @@
 package protobuf
 
+//
+// Descriptor types
+//
+
+Proto_Message_Descriptor :: struct {
+    fields: [] Proto_Field_Descriptor
+}
+
 Proto_Field_Descriptor :: struct {
     field_offset: i32
 
@@ -11,17 +19,12 @@ Proto_Field_Descriptor :: struct {
     int_encoding: Int_Encoding
 }
 
-Proto_Message :: struct {
-    name: str
-    fields: [] Proto_Field_Descriptor
-}
-
 
 //
 // Tag Types
 //
 
-Message :: struct { name: str }
+Message :: #distinct void
 Field   :: struct { number: i32 }
 
 Int_Encoding :: enum {

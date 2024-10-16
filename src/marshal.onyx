@@ -112,7 +112,7 @@ marshal :: (input: $T, dest: &dyn_str) -> Result(bool, Marshal_Error) {
         switch int_encoding {
             case .Zig_Zag {
                 int_value: i64 = uint_value
-                if int_value >= 0 do uint_value = int_value * 2
+                if int_value >= 0 do uint_value = 2 *  int_value
                 else              do uint_value = 2 * -int_value - 1
 
                 fallthrough
@@ -186,8 +186,10 @@ marshal :: (input: $T, dest: &dyn_str) -> Result(bool, Marshal_Error) {
         switch type {
             case bool do return ~~(1 if *cast(& bool) val else 0)
 
-            case f32, i32, u32 do return ~~ *cast(& u32) val
-            case f64, i64, u64 do return    *cast(& u64) val
+            case i32      do return ~~ *cast(& i32) val
+            case i64      do return ~~ *cast(& i64) val
+            case f32, u32 do return ~~ *cast(& u32) val
+            case f64, u64 do return    *cast(& u64) val
         }
 
         if type->info().kind == .Enum {

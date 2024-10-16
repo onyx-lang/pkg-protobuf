@@ -25,6 +25,17 @@ unmarshal :: (input: [] u8, $type: type_expr, allocator := context.allocator) ->
 
 #local {
 
+_Field_Header :: struct {
+    proto_number: i32
+    encoding_type: _Encoding_Type
+}
+
+_Field_Value :: union {
+    number: u64
+    bytes: [] u8
+}
+
+
 parse_message :: (input: [] u8, out: rawptr, type: type_expr) -> Result(bool, Unmarshal_Error) {
     if !registered_proto_types->has(type) do return .{ Err = .{ Unknown_Type = type } }
 
@@ -70,20 +81,6 @@ parse_message :: (input: [] u8, out: rawptr, type: type_expr) -> Result(bool, Un
 
     return .{ Ok = true }
 }
-
-
-
-_Field_Header :: struct {
-    proto_number: i32
-    encoding_type: _Encoding_Type
-}
-
-_Field_Value :: union {
-    number: u64
-    bytes: [] u8
-}
-
-
 
 parse_field_header :: (data: &[] u8) -> Result(_Field_Header, Unmarshal_Error) {
     if data.length == 0 do return .{ Err = .EOF }
@@ -131,11 +128,6 @@ parse_field_value :: (data: &[] u8, enc: _Encoding_Type) -> Result(_Field_Value,
             str.advance(data, length)
 
             return .{ Ok = .{ bytes = result } }
-        }
-
-        case _ {
-            panic("UNHANDLED")
-            return .{ Err = .Unexpected_EOF }
         }
     }
 }

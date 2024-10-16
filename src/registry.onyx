@@ -6,7 +6,7 @@ use core.misc
 use runtime.info
 
 #package {
-    registered_proto_types: Map(type_expr, Proto_Message)
+    registered_proto_types: Map(type_expr, Proto_Message_Descriptor)
 }
 
 proto_types_preloaded :: #init () {
@@ -16,9 +16,8 @@ proto_types_preloaded :: #init () {
         if it.info.kind != .Struct do continue
 
         struct_info := it.info->as_struct()
-        msg := switch Slice.find_opt(struct_info.tags, [x](x.type == Message)) {
-            case .Some as m => misc.any_as(m, Message)
-            case .None => do { continue; return null }
+        if !Slice.some(struct_info.tags, [x](x.type == type_expr && *cast(&type_expr, x.data) == Message)) {
+            continue
         }
 
         fields := make([] Proto_Field_Descriptor, struct_info.members.length)
@@ -41,11 +40,11 @@ proto_types_preloaded :: #init () {
             }
         }
 
-        register_proto_type(it.type, .{ msg.name, fields })
+        register_proto_type(it.type, .{ fields })
     }
 }
 
-register_proto_type :: (type: type_expr, desc: Proto_Message) {
+register_proto_type :: (type: type_expr, desc: Proto_Message_Descriptor) {
     registered_proto_types->put(type, desc)
 }
 

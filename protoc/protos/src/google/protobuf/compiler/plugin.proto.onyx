@@ -2,7 +2,7 @@ package protobuf.google.protobuf.compiler
 
 use protobuf
 
-@protobuf.Message.{}
+@protobuf.Message
 Version :: struct {
     @protobuf.Field.{1}  major: ? i32
     @protobuf.Field.{2}  minor: ? i32
@@ -10,7 +10,7 @@ Version :: struct {
     @protobuf.Field.{4}  suffix: ? str
 }
 
-@protobuf.Message.{}
+@protobuf.Message
 CodeGeneratorRequest :: struct {
     @protobuf.Field.{1}   file_to_generate: [..] str
     @protobuf.Field.{2}   parameter: ? str
@@ -19,7 +19,7 @@ CodeGeneratorRequest :: struct {
     @protobuf.Field.{3}   compiler_version: ? protobuf.google.protobuf.compiler.Version
 }
 
-@protobuf.Message.{}
+@protobuf.Message
 CodeGeneratorResponse :: struct {
     @protobuf.Field.{1}   error: ? str
     @protobuf.Field.{2}   supported_features: ? u64
@@ -28,7 +28,7 @@ CodeGeneratorResponse :: struct {
     @protobuf.Field.{15}  file: [..] protobuf.google.protobuf.compiler.CodeGeneratorResponse.File
 }
 
-@protobuf.Message.{}
+@protobuf.Message
 CodeGeneratorResponse.File :: struct {
     @protobuf.Field.{1}   name: ? str
     @protobuf.Field.{2}   insertion_point: ? str
