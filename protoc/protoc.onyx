@@ -30,8 +30,6 @@ main :: () {
     }
 
     include_file_content := make(dyn_str)
-    include_file_content->append("package protobuf\n\n")
-
     for& file in files {
         include_file_content->append(tprintf("#load \"./{}\"\n", file.name!))
     }
@@ -51,7 +49,7 @@ generate_file :: (file: &FileDescriptorProto) -> CodeGeneratorResponse.File {
 
     content := make(dyn_str)
 
-    content->append(tprintf("package protobuf.{}\n\n", file.package_->expect("expected file to have a package")))
+    content->append(tprintf("package protobuf.{}\n\n", file.package_ ?? "default"))
     content->append("use protobuf\n\n")
 
     for& msg in file.message_type {
