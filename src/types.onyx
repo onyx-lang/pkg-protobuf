@@ -26,7 +26,7 @@ Proto_Field_Descriptor :: struct {
 //
 
 Message :: #distinct void
-Field   :: struct { number: i32; protobuf_type: _Field_Type }
+Field   :: struct { number: i32; protobuf_type: u32 }
 
 
 #package

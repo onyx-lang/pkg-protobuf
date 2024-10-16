@@ -48,7 +48,7 @@ proto_types_preloaded :: #init () {
                 |> .find_opt([x](x.type == Field))
                 |> .transform(x => *misc.any_as(x, Field))
                 |> .with([fi] {
-                    fields[index].proto_field_type   = fi.protobuf_type 
+                    fields[index].proto_field_type   = ~~ fi.protobuf_type 
                     fields[index].proto_field_number = fi.number
                 })
         }
